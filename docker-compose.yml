@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  website-a:
+    build: ./website-a
+    ports:
+      - "8001:8000"
+    env_file:
+      - ./website-a/.env
+
+  integration:
+    build: ./integration
+    ports:
+      - "8002:8000"
+    env_file:
+      - ./integration/.env
+
+
+  db-a:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: a_user
+      POSTGRES_PASSWORD: a_pass
+      POSTGRES_DB: a_db
+
+  db-b:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: b_user
+      POSTGRES_PASSWORD: b_pass
+      POSTGRES_DB: b_db
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U b_user -d b_db" ]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  website-b:
+    build: ./website-b
+    ports:
+      - "8003:8000"
+    env_file:
+      - ./website-b/.env
+    depends_on:
+      db-b:
+        condition: service_healthy
+
